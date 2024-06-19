@@ -1,0 +1,78 @@
+import numpy as np
+
+# Parâmetros do exercício
+lambda1 = 1  # taxa média de chegada (mensagens/seg)
+mu1 = 5  # taxa média de partida (mensagens/seg)
+tempo_limite = 5000  # tempo limite de simulação
+
+# Inicialização das variáveis
+t = 0  # tempo inicial
+lq = 0  # número de elementos na fila
+ls = 0  # número de elementos no servidor (0 = vazio, 1 = ocupado)
+k1 = 0  # variável auxiliar para chegadas
+k2 = 0  # variável auxiliar para partidas
+k = 0  # número de partidas
+m = 1 #número de servidores
+
+
+chegadas = np.random.exponential(1 / lambda1, 100000)  # vetor de chegadas
+partidas = np.full(100000, 1 / mu1)  # vetor de partidas fixas
+
+tc = [0]  # tempo de chegadas
+tp = []  # tempo de partidas
+ts = []  # tempo no sistema
+
+ta = t + chegadas[k1]  # próxima chegada
+td = np.inf  # próxima partida
+
+while t < tempo_limite:  # tempo limite de simulação
+    t = min(ta, td)  # próximo tempo de execução
+
+    if ta < td:  # evento de chegada
+        k1 += 1
+        if ls == 1:  # servidor ocupado
+            lq += 1  # aumenta a fila
+        else:  # servidor desocupado
+            ls = 1  # ocupa o servidor
+            k2 += 1
+            td = t + partidas[k2]  # gera nova partida
+
+        ta = t + chegadas[k1]  # gera nova chegada
+        tc.append(t)  # armazena tempo atual de chegada
+
+    elif ta == td:  # chegada e partida simultânea
+        tc.append(t)  # armazena o tempo atual de chegada
+        tp.append(t)  # armazena o tempo atual de partida
+        k += 1  # incrementa a partida
+        ts.append(tp[-1] - tc[-1])  # calcula o tempo no sistema
+
+        k1 += 1
+        k2 += 1
+        td = t + partidas[k2]  # calcula a próxima partida
+        ta = t + chegadas[k1]  # calcula a próxima chegada
+
+    else:  # evento de partida
+        td = np.inf  # reseta o tempo de partida
+        k += 1  # incrementa o número de partidas
+
+        if lq > 0:  # existem pacotes na fila
+            tp.append(t)  # armazena o tempo da partida
+            ts.append(tp[-1] - tc[k - 1])  # calcula o tempo no sistema
+            lq -= 1  # diminui a fila em 1
+            k2 += 1
+            td = t + partidas[k2]  # calcula a próxima partida
+        else:  # não há pacotes na fila
+            tp.append(t)  # armazena o tempo da partida
+            ts.append(tp[-1] - tc[k - 1])  # calcula o tempo no sistema
+            ls = 0  # esvazia o servidor
+
+
+
+rho = lambda1 / mu1
+j = m+1
+eq = (rho /(1-rho))* (1-rho/j)
+etq = eq/lambda1
+
+print("Fator de utilização (rho):", rho)
+print("Tempo médio que uma mensagem permanece no nó (tq):",tq, "segundos")
+print("Número médio de mensagens na fila (eq):", eq, "mensagens")
