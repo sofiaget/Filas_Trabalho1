@@ -1,0 +1,109 @@
+import numpy as np
+import matplotlib.pyplot as plt
+t = 0 #tempo inicial
+lq = 0 #numero de elementos na fila
+ls = 1 #numero de elementos no servidor
+k1 = 0 #variavel auxiliar
+k2 = 0 #variavel auxiliar
+k = 0 #numero de partidas
+lambda1= 200 #taxa media de chegada
+mu1= 250 #taxa media de partida
+j = 4 #Numero de posições na fila
+k3 = 0 #Numero de elementos perdidos
+ntotal = 1 #Numero total de elementos
+chegadas = np.random.exponential(1/lambda1,1) #vetor de chegadas
+ 
+partidas = np.random.exponential(1/mu1,1) #vetor de partidas
+tc = [0] #tempo de chegadas
+tp = [] #tempo de partidas
+ts = [] #tempo no sistema
+ 
+ta = t + chegadas[k1] #proxima chegada
+td = t + partidas[k2] #proxima partida
+t = np.minimum(ta, td) #proximo tempo de execucao
+ 
+while (t < 500): #tempo limite de simulacao
+ 
+    if ta<td: #evento de chegada
+        k1 = k1 + 1
+        ta = [] #apaga o tempo de chegada atual
+        if ls == 1: #servidor ocupado
+            if lq < (j + 1): #Sem bloqueio
+              lq = lq + 1 #aumenta a fila
+              ta = t + np.random.exponential(1/lambda1,1) #gera nova chegada
+              tc = np.append(tc, t) #aramazena tempo atual de chegada
+              ntotal = ntotal + 1
+            else: #Bloqueio
+              k3 = k3 + 1
+              ntotal = ntotal + 1
+              ta = t + np.random.exponential(1/lambda1,1)
+             
+        else: #servidor desocupado
+            ls = 1 #ocupa o servidor
+            k2 = k2 + 1
+            td = t + np.random.exponential(1/mu1,1) #gera nova partida
+            ta = t + np.random.exponential(1/lambda1,1) #gera nova chegada
+            tc = np.append(tc, t) #aramazena tempo atual de chegada
+            ntotal = ntotal + 1
+ 
+ 
+    elif ta == td: #chegada e partida simultanea
+ 
+        tc = np.append(tc, t) #armazena o tempo atual de chegada
+        tp = np.append(tp, t) #armazena o tempo atual de partida
+ 
+        k = k + 1 #incrementa a partida
+ 
+        ts = np.append(ts,(tp[k-1] - tc[k-1])) #calcula o tempo no sistema
+ 
+        ta = [] #apaga os valores atuais de chegada e partida
+        td = []
+        k1 = k1 + 1
+        k2 = k2 + 1
+        td = t + np.random.exponential(1/mu1,1) #calcula a proxima partida
+        ta = t + np.random.exponential(1/lambda1,1) #calcula a proxima chegada
+        ntotal = ntotal + 1
+ 
+ 
+ 
+    else: #evento de partida
+        td = [] #apaga o tempo de partida
+ 
+        k = k + 1 #incrementa o numero de partidas
+ 
+        if lq > 0:#existem pacotes na fila
+            tp = np.append(tp, t) #armazeno o tempo da partida
+            ts = np.append(ts, (tp[k - 1] - tc[k - 1])) #calculo o tempo no sistema
+            lq = lq - 1 #diminuo a fila em 1
+            k2 = k2 + 1
+            td = t + np.random.exponential(1/mu1,1)#calculo a proxima partida
+ 
+        else: #nao ha pacotes na fila
+            tp = np.append(tp, t)#armazeno o tempo da partida
+            ts = np.append(ts, (tp[k - 1] - tc[k - 1])) #calculo o tempo no sistema
+ 
+            td = np.infty #coloco um valor muito grande para a proxima partida
+            ls = 0 #esvazio o servidor
+ 
+ 
+    t = np.minimum(ta, td) #calculo o tempo minimo entre chegada e partida
+ 
+rho=lambda1/mu1
+tw=np.mean(ts)-1/mu1
+eq=lambda1*np.mean(ts)
+ew=lambda1*tw
+probBloq = k3 / ntotal
+ 
+ 
+print("Fator de utilizacao rho")
+print(rho)
+print("Tempo no sistema")
+print(np.mean(ts))
+print("Tempo na fila")
+print(tw)
+print("Numero medio de pacotes no sistema")
+print(eq)
+print("Numero medio de pacotes na fila")
+print(ew)
+print("Probabilidade de bloqueio:")
+print(probBloq)
